@@ -6,13 +6,24 @@ import './Register.css';
 const Register = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
-        role: '',
         name: '',
         email: '',
-        password: ''
+        password: '',
+        role: '',
+        specialization: '',
+        experience: ''
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const specializations = [
+        'Cardiologist',
+        'Dermatologist',
+        'Pediatrician',
+        'Neurologist',
+        'Orthopedic',
+        'General Physician'
+    ];
 
     const handleChange = (e) => {
         setFormData({
@@ -46,38 +57,26 @@ const Register = () => {
 
     return (
         <div className="register-container">
-            <h2>Register</h2>
-            <p className="tagline">Join our Healthcare Portal</p>
+            <h2>Create Account</h2>
+            {error && <div className="error-message">{error}</div>}
             
             <form onSubmit={handleSubmit} className="register-form">
-                <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    className="role-select"
-                    required
-                >
-                    <option value="">Select Role</option>
-                    <option value="Patient">Patient</option>
-                    <option value="Doctor">Doctor</option>
-                </select>
-
                 <input
                     type="text"
                     name="name"
+                    placeholder="Full Name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="Full Name"
                     required
                     className="input-field"
                 />
-                
+
                 <input
                     type="email"
                     name="email"
+                    placeholder="Email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="Email"
                     required
                     className="input-field"
                 />
@@ -85,20 +84,58 @@ const Register = () => {
                 <input
                     type="password"
                     name="password"
+                    placeholder="Password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Password"
                     required
                     className="input-field"
                 />
+
+                <select
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    required
+                    className="role-select"
+                >
+                    <option value="">Select Role</option>
+                    <option value="Patient">Patient</option>
+                    <option value="Doctor">Doctor</option>
+                </select>
+
+                {formData.role === 'Doctor' && (
+                    <>
+                        <select
+                            name="specialization"
+                            value={formData.specialization}
+                            onChange={handleChange}
+                            required
+                            className="input-field"
+                        >
+                            <option value="">Select Specialization</option>
+                            {specializations.map(spec => (
+                                <option key={spec} value={spec}>{spec}</option>
+                            ))}
+                        </select>
+
+                        <input
+                            type="number"
+                            name="experience"
+                            placeholder="Years of Experience"
+                            value={formData.experience}
+                            onChange={handleChange}
+                            required
+                            min="0"
+                            className="input-field"
+                        />
+                    </>
+                )}
 
                 <button type="submit" className="register-button" disabled={loading}>
                     {loading ? 'Registering...' : 'Register'}
                 </button>
             </form>
 
-            {error && <p className="error-message">{error}</p>}
-            
             <p>Already have an account?</p>
             <Link to="/login" className="login-link">Login</Link>
         </div>

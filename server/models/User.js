@@ -4,23 +4,33 @@ import bcrypt from 'bcryptjs';
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'Name is required']
+        required: true
     },
     email: {
         type: String,
-        required: [true, 'Email is required'],
-        unique: true,
-        match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please add a valid email']
+        required: true,
+        unique: true
     },
     password: {
         type: String,
-        required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters']
+        required: true
     },
     role: {
         type: String,
         enum: ['Patient', 'Doctor'],
-        required: [true, 'Role is required']
+        required: true
+    },
+    specialization: {
+        type: String,
+        required: function() {
+            return this.role === 'Doctor';
+        }
+    },
+    experience: {
+        type: Number,
+        required: function() {
+            return this.role === 'Doctor';
+        }
     }
 }, {
     timestamps: true
@@ -35,21 +45,5 @@ userSchema.pre('save', async function(next) {
     this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Add method to compare password
-userSchema.methods.matchPassword = async function(enteredPassword) {
-    return await bcrypt.compare(enteredPassword, this.password);
-};
-
-// Drop existing indexes and create new ones
 const User = mongoose.model('User', userSchema);
-const init = async () => {
-    try {
-        await User.collection.dropIndexes();
-        await User.collection.createIndex({ email: 1 }, { unique: true });
-    } catch (error) {
-        console.log('Index initialization error:', error);
-    }
-};
-init();
-
 export default User;

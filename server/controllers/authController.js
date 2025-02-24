@@ -5,21 +5,28 @@ import jwt from 'jsonwebtoken';
 // Registration Logic
 export const registerUser = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { name, email, password, role, specialization, experience } = req.body;
 
-        // Check if user exists
         const userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Create user
-        const user = await User.create({
+        // Create user object based on role
+        const userData = {
             name,
             email,
             password,
             role
-        });
+        };
+
+        // Add doctor-specific fields if role is Doctor
+        if (role === 'Doctor') {
+            userData.specialization = specialization;
+            userData.experience = experience;
+        }
+
+        const user = await User.create(userData);
 
         if (user) {
             const token = jwt.sign(
@@ -34,7 +41,11 @@ export const registerUser = async (req, res) => {
                     id: user._id,
                     name: user.name,
                     email: user.email,
-                    role: user.role
+                    role: user.role,
+                    ...(user.role === 'Doctor' && {
+                        specialization: user.specialization,
+                        experience: user.experience
+                    })
                 },
                 token
             });
