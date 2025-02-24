@@ -11,12 +11,13 @@ const connectDB = async () => {
         
         const conn = await mongoose.connect(process.env.MONGO_URI);
         
-        // Drop existing collection and indexes
-        try {
-            await mongoose.connection.collection('users').drop();
-        } catch (error) {
-            console.log('Collection does not exist yet');
-        }
+        // Comment out or remove these lines to preserve existing users
+        // try {
+        //     await mongoose.connection.collection('users').drop();
+        //     console.log('Previous users collection dropped');
+        // } catch (error) {
+        //     console.log('Collection does not exist yet');
+        // }
         
         console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {

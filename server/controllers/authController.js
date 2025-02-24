@@ -61,31 +61,75 @@ export const registerUser = async (req, res) => {
 
 // Login Logic
 export const loginUser = async (req, res) => {
-    const { email, password, role } = req.body;
-
     try {
+        const { email, password, role } = req.body;
+
+        // Check if user exists
         const user = await User.findOne({ email });
-        if (!user || user.role !== role) {
-            return res.status(400).json({ message: 'Invalid credentials.' });
+        
+        if (!user) {
+            return res.status(400).json({ message: 'User not found' });
         }
 
-        const isMatch = await user.matchPassword(password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials.' });
+        // Validate role
+        if (user.role !== role) {
+            return res.status(400).json({ message: 'Invalid role for this user' });
         }
 
-        // Generate JWT Token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-            expiresIn: '1h',  // Token expires in 1 hour
-        });
+        // Check password
+        const isPasswordMatch = await bcrypt.compare(password, user.password);
+        if (!isPasswordMatch) {
+            return res.status(400).json({ message: 'Invalid password' });
+        }
 
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '1d' }
+        );
+
+        // Send response
         res.json({
-            message: 'Login successful!',
+            success: true,
             token,
-            user: { id: user._id, name: user.name, email: user.email, role: user.role }
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                ...(user.role === 'Doctor' && {
+                    specialization: user.specialization,
+                    experience: user.experience
+                })
+            }
         });
+
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Login error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error logging in',
+            error: error.message
+        });
+    }
+};
+
+
+export const protect = async (req, res, next) => {
+    let token;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.userId = decoded.id;
+            next();
+        } catch (error) {
+            res.status(401).json({ message: 'Not authorized, invalid token' });
+        }
+    } else {
+        res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
 

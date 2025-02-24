@@ -5,20 +5,13 @@ import './Login.css';
 
 const Login = () => {
     const [formData, setFormData] = useState({
-        role: '',
         email: '',
-        password: ''
+        password: '',
+        role: ''
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -27,26 +20,37 @@ const Login = () => {
 
         try {
             const response = await axios.post('http://localhost:5000/auth/login', formData);
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('userRole', response.data.user.role);
+            
+            if (response.data.success) {
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('userRole', response.data.user.role);
 
-            // Redirect based on role
-            if (response.data.user.role === 'Patient') {
-                navigate('/patient-dashboard');
-            } else {
-                navigate('/doctor-dashboard');
+                // Redirect based on role
+                if (response.data.user.role === 'Patient') {
+                    navigate('/patient-dashboard');
+                } else {
+                    navigate('/doctor-dashboard');
+                }
             }
-        } catch (err) {
-            setError(err.response?.data?.message || 'Login failed');
+        } catch (error) {
+            setError(error.response?.data?.message || 'Login failed. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
+
     return (
         <div className="login-container">
             <h2>Login</h2>
-            <p className="tagline">Healthcare Portal</p>
+            {error && <div className="error-message">{error}</div>}
+            
             <form onSubmit={handleSubmit} className="login-form">
                 <select
                     name="role"
@@ -69,6 +73,7 @@ const Login = () => {
                     required
                     className="input-field"
                 />
+
                 <input
                     type="password"
                     name="password"
@@ -78,12 +83,16 @@ const Login = () => {
                     required
                     className="input-field"
                 />
-                <button type="submit" className="login-button" disabled={loading}>
+
+                <button 
+                    type="submit" 
+                    className="login-button"
+                    disabled={loading}
+                >
                     {loading ? 'Logging in...' : 'Login'}
                 </button>
             </form>
 
-            {error && <p className="error-message">{error}</p>}
             <p>Don't have an account?</p>
             <Link to="/register" className="register-link">Register</Link>
         </div>

@@ -4,6 +4,7 @@ import cors from 'cors';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import appointmentRoutes from './routes/appointmentRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 dotenv.config();
 
@@ -21,6 +22,8 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/users', userRoutes);
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -43,3 +46,4 @@ const server = app.listen(PORT, () => {
         console.error(err);
     }
 });
+
