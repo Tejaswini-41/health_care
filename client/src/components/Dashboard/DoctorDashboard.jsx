@@ -10,9 +10,9 @@ const DoctorDashboard = () => {
     const [error, setError] = useState('');
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const [showAIModal, setShowAIModal] = useState(false);
+    const [loadingInsights, setLoadingInsights] = useState({});
     const [aiInsights, setAIInsights] = useState(null);
-    const [loadingInsights, setLoadingInsights] = useState(false);
+    const [showAIModal, setShowAIModal] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -74,7 +74,11 @@ const DoctorDashboard = () => {
     };
 
     const handleGetAIInsights = async (appointment) => {
-        setLoadingInsights(true);
+        setLoadingInsights(prev => ({
+            ...prev,
+            [appointment._id]: true
+        }));
+
         try {
             const healthData = {
                 age: appointment.age || 0,
@@ -110,7 +114,10 @@ const DoctorDashboard = () => {
                     : 'Failed to get AI insights. Please try again.'
             );
         } finally {
-            setLoadingInsights(false);
+            setLoadingInsights(prev => ({
+                ...prev,
+                [appointment._id]: false
+            }));
         }
     };
 
@@ -178,11 +185,11 @@ const DoctorDashboard = () => {
                                         View Health Data
                                     </button>
                                     <button 
-                                        className={`ai-insights-btn ${loadingInsights ? 'loading' : ''}`}
+                                        className={`ai-insights-btn ${loadingInsights[appointment._id] ? 'loading' : ''}`}
                                         onClick={() => handleGetAIInsights(appointment)}
-                                        disabled={loadingInsights}
+                                        disabled={loadingInsights[appointment._id]}
                                     >
-                                        {loadingInsights ? (
+                                        {loadingInsights[appointment._id] ? (
                                             <>
                                                 <i className="fas fa-spinner fa-spin"></i>
                                                 Analyzing...
