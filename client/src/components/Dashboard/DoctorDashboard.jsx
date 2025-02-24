@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './DoctorDashboard.css';
 
@@ -7,6 +8,7 @@ const DoctorDashboard = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchDoctorData();
@@ -39,38 +41,35 @@ const DoctorDashboard = () => {
         }
     };
 
-    const handleStatusUpdate = async (appointmentId, status) => {
-        try {
-            const token = localStorage.getItem('token');
-            await axios.put(
-                `http://localhost:5000/api/appointments/update-status/${appointmentId}`,
-                { status },
-                { headers: { Authorization: `Bearer ${token}` }}
-            );
-            fetchAppointments();
-        } catch (error) {
-            setError('Error updating appointment status');
-        }
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        navigate('/login');
     };
 
     if (loading) return <div className="loading">Loading...</div>;
 
     return (
-        <div className="doctor-dashboard">
-            <div className="profile-card">
-                <div className="profile-header">
-                    <h2>Doctor Profile</h2>
-                </div>
-                <div className="profile-info">
-                    <p><strong>Name:</strong> Dr. {profile?.name}</p>
-                    <p><strong>Email:</strong> {profile?.email}</p>
-                    <p><strong>Specialization:</strong> {profile?.specialization}</p>
-                    <p><strong>Experience:</strong> {profile?.experience} years</p>
+        <div className="dashboard-layout">
+            <div className="sidebar">
+                <div className="profile-section">
+                    <div className="profile-image">
+                        <img src="https://via.placeholder.com/150" alt="Doctor Profile" />
+                    </div>
+                    <div className="profile-details">
+                        <h3>Dr. {profile?.name}</h3>
+                        <p className="specialization">{profile?.specialization}</p>
+                        <p className="experience">{profile?.experience} Years Experience</p>
+                        <p className="email">{profile?.email}</p>
+                    </div>
+                    <button onClick={handleLogout} className="logout-btn">
+                        Logout
+                    </button>
                 </div>
             </div>
 
-            <div className="appointments-section">
-                <h3>Upcoming Appointments</h3>
+            <div className="main-content">
+                <h2>Appointments</h2>
                 {error && <div className="error-message">{error}</div>}
                 
                 <div className="appointments-grid">
@@ -82,24 +81,7 @@ const DoctorDashboard = () => {
                             <p><strong>Date:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
                             <p><strong>Time:</strong> {appointment.time}</p>
                             <p><strong>Symptoms:</strong> {appointment.symptoms}</p>
-                            <p><strong>Status:</strong> {appointment.status}</p>
-                            
-                            {appointment.status === 'Pending' && (
-                                <div className="action-buttons">
-                                    <button 
-                                        className="approve-btn"
-                                        onClick={() => handleStatusUpdate(appointment._id, 'Approved')}
-                                    >
-                                        Approve
-                                    </button>
-                                    <button 
-                                        className="reject-btn"
-                                        onClick={() => handleStatusUpdate(appointment._id, 'Rejected')}
-                                    >
-                                        Reject
-                                    </button>
-                                </div>
-                            )}
+                            <div className="status-badge">{appointment.status}</div>
                         </div>
                     ))}
                 </div>
