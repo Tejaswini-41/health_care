@@ -361,3 +361,49 @@
     gap: 10px;
     margin-top: 15px;
 }
+
+.ai-insights-btn {
+    background: #6b46c1;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.ai-insights-btn:hover {
+    background: #553c9a;
+}
+
+.ai-insights-btn:disabled {
+    background: #a0aec0;
+    cursor: not-allowed;
+}
+
+.ai-insights {
+    padding: 20px;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.ai-content {
+    line-height: 1.6;
+}
+
+.ai-content p {
+    margin-bottom: 12px;
+}
+
+.ai-content strong {
+    color: #2d3748;
+}
+
+.modal-content.ai-insights {
+    max-width: 800px;
+    width: 90%;
+}

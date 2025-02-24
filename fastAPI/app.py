@@ -7,22 +7,35 @@ import logging
 from typing import List
 import google.generativeai as genai  # Google Generative AI SDK
 import os
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
-# api_key = os.getenv("GEMINI_API_KEY")
+load_dotenv()  # Add this at the top with other imports
 
-# Configure Google Generative AI API key
-genai.configure(api_key="AIzaSyBDMYAX4pPgl0XO9wUwIEatNI3EdgHmYeU")
+# Replace the hard-coded API key with environment variable
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY not found in environment variables")
+
+genai.configure(api_key=api_key)
 
 # Initialize FastAPI App
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ========================== #
-# 🚀 Load Models at Startup  #
-# ========================== #
+
 try:
     # Load XGBoost Activity Model
     with open("xgb_activity_model.pkl", "rb") as f:

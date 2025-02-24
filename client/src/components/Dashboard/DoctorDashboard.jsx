@@ -10,6 +10,9 @@ const DoctorDashboard = () => {
     const [error, setError] = useState('');
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [showAIModal, setShowAIModal] = useState(false);
+    const [aiInsights, setAIInsights] = useState(null);
+    const [loadingInsights, setLoadingInsights] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -68,6 +71,29 @@ const DoctorDashboard = () => {
         const appointment = appointments.find(apt => apt._id === appointmentId);
         setSelectedAppointment(appointment);
         setShowModal(true);
+    };
+
+    const handleGetAIInsights = async (appointment) => {
+        setLoadingInsights(true);
+        try {
+            const data = {
+                age: appointment.age,
+                bmi: appointment.bmi,
+                heart_rate: appointment.heart_rate || [],
+                activity_levels: appointment.activity_levels || [],
+                medical_history: appointment.medical_history || '',
+                medical_symptoms: appointment.symptoms
+            };
+
+            const response = await axios.post('http://localhost:8000/generate-summary', data);
+            setAIInsights(response.data);
+            setShowAIModal(true);
+        } catch (error) {
+            console.error('Error fetching AI insights:', error);
+            setError('Failed to fetch AI insights');
+        } finally {
+            setLoadingInsights(false);
+        }
     };
 
     if (loading) return <div className="loading">Loading...</div>;
@@ -133,6 +159,13 @@ const DoctorDashboard = () => {
                                     >
                                         View Health Data
                                     </button>
+                                    <button 
+                                        className="ai-insights-btn"
+                                        onClick={() => handleGetAIInsights(appointment)}
+                                        disabled={loadingInsights}
+                                    >
+                                        {loadingInsights ? 'Loading...' : 'AI Insights'}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -189,6 +222,24 @@ const DoctorDashboard = () => {
                                         <p>{selectedAppointment.medical_history}</p>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showAIModal && aiInsights && (
+                    <div className="modal">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h3>AI Health Insights</h3>
+                                <button className="close-btn" onClick={() => setShowAIModal(false)}>×</button>
+                            </div>
+                            <div className="modal-body ai-insights">
+                                <div className="ai-content">
+                                    {aiInsights.split('\n').map((line, index) => (
+                                        <p key={index}>{line}</p>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
