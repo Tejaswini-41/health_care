@@ -103,6 +103,7 @@ class SummaryInput(BaseModel):
     activity_levels: List[List[float]]  # Daily activity metrics for the last 2-3 days
     medical_history: str
     medical_symptoms: str
+    patient_id: str  # Add this to track individual patients
 
 
 # ========================== #
@@ -154,32 +155,82 @@ def predict_health(data: HealthInput):
 # 🚀 Summary Generation Endpoint #
 # ========================== #
 @app.post("/generate-summary")
-def generate_summary(data: SummaryInput):
+async def generate_summary(data: SummaryInput):
     try:
-        # Construct prompt for the generative model
+        # Personalized analysis based on patient data
+        health_score = calculate_health_score(data)
+        
         prompt = (
-            f"Generate a comprehensive health report as if you are a doctor. "
-            f"Patient details: Age: {data.age}, BMI: {data.bmi}. "
-            f"Heart Rate Readings (sample): {data.heart_rate[:10]} (total {len(data.heart_rate)} readings). "
-            f"Activity levels for the last {len(data.activity_levels)} days: {data.activity_levels}. "
-            f"Medical History: {data.medical_history}. "
-            f"Medical Symptoms: {data.medical_symptoms}. "
-            "Provide a detailed summary with an overall health score (0-100), observations, and recommendations in a format that could be rendered on a website section."
+            f"As a medical professional, provide a personalized health analysis for this specific patient.\n"
+            f"Patient Profile:\n"
+            f"- Age: {data.age}\n"
+            f"- BMI: {data.bmi:.1f}\n"
+            f"- Current Symptoms: {data.medical_symptoms}\n"
+            f"- Medical History: {data.medical_history}\n\n"
+            f"Recent Health Metrics:\n"
+            f"- Heart Rate (avg): {sum(data.heart_rate)/len(data.heart_rate):.0f} BPM\n"
+            f"- Activity Data: {format_activity_data(data.activity_levels)}\n\n"
+            f"Health Score: {health_score}/100\n\n"
+            "Provide:\n"
+            "1. Overall Health Assessment\n"
+            "2. Key Concerns\n"
+            "3. Specific Recommendations\n"
+            "4. Lifestyle Modifications\n"
+            "Format the response in clear sections with bullet points where appropriate."
         )
 
-        # Use the Google Generative AI SDK to generate the summary text
         model = genai.GenerativeModel("gemini-pro")
         response = model.generate_content(prompt)
-        if response.text is None:
-            raise ValueError("No result returned from the Generative AI API.")
 
-        return response.text
+        if not response.text:
+            raise ValueError("No AI response generated")
+
+        return {
+            "text": response.text,
+            "health_score": health_score
+        }
 
     except Exception as e:
-        logger.error(f"🔥 Summary generation failed: {str(e)}")
         raise HTTPException(
-            status_code=500, detail="Summary generation failed. Check logs for details."
+            status_code=500,
+            detail=f"Failed to generate insights: {str(e)}"
         )
+
+def calculate_health_score(data: SummaryInput) -> int:
+    try:
+        # Basic health score calculation
+        base_score = 70  # Start with base score
+        
+        # BMI Impact (-10 to +10)
+        if 18.5 <= data.bmi <= 24.9:
+            base_score += 10
+        elif 25 <= data.bmi <= 29.9:
+            base_score -= 5
+        else:
+            base_score -= 10
+            
+        # Heart Rate Impact (-10 to +10)
+        avg_hr = sum(data.heart_rate)/len(data.heart_rate)
+        if 60 <= avg_hr <= 100:
+            base_score += 10
+        else:
+            base_score -= 5
+            
+        # Activity Impact (0 to +10)
+        if data.activity_levels:
+            activity_score = min(10, len(data.activity_levels))
+            base_score += activity_score
+            
+        return max(0, min(100, base_score))
+    except:
+        return 50  # Default score if calculation fails
+
+def format_activity_data(activity_levels: List[List[float]]) -> str:
+    if not activity_levels:
+        return "No activity data available"
+    
+    recent_activity = activity_levels[-1]
+    return f"Steps: {recent_activity[0]:.0f}, Duration: {recent_activity[1]:.0f}min, Calories: {recent_activity[2]:.0f}"
 
 
 # ========================== #
