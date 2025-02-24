@@ -223,15 +223,7 @@ const PatientDashboard = () => {
             <i className="fas fa-plus-circle"></i>
             <span>Book Appointment</span>
           </button>
-          <button
-            className={`nav-link ${activeTab === "sync" ? "active" : ""}`}
-            onClick={() => setActiveTab("sync")}
-          >
-            <i className="fas fa-sync"></i>
-            <span>Health Data</span>
-          </button>
         </nav>
-
 
         <div className="sidebar-footer">
           <button

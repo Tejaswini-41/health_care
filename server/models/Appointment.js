@@ -39,7 +39,7 @@ const appointmentSchema = new mongoose.Schema({
             default: Date.now
         }
     }],
-    // New fields
+
     age: {
         type: Number,
         required: false

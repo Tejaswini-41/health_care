@@ -183,3 +183,24 @@ export const getHealthData = async (req, res) => {
     }
 };
 
+// Add this new controller function
+export const getMyAppointments = async (req, res) => {
+    try {
+        const appointments = await Appointment.find({ patient: req.userId })
+            .populate('doctor', 'name email specialization')
+            .sort({ date: -1 });
+
+        res.status(200).json({
+            success: true,
+            appointments
+        });
+    } catch (error) {
+        console.error('Error fetching appointments:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching appointments',
+            error: error.message
+        });
+    }
+};
+
