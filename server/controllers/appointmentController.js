@@ -3,7 +3,17 @@ import User from '../models/User.js';
 
 export const createAppointment = async (req, res) => {
     try {
-        const { doctorId, date, time, symptoms } = req.body;
+        const { 
+            doctorId, 
+            date, 
+            time, 
+            symptoms, 
+            age,
+            bmi,
+            heart_rate,
+            activity_levels,
+            medical_history 
+        } = req.body;
         const patientId = req.userId; // From auth middleware
 
         // Validate doctor exists
@@ -21,7 +31,12 @@ export const createAppointment = async (req, res) => {
             doctor: doctorId,
             date,
             time,
-            symptoms
+            symptoms,
+            age,
+            bmi,
+            heart_rate,
+            activity_levels,
+            medical_history
         });
 
         // Populate patient and doctor details

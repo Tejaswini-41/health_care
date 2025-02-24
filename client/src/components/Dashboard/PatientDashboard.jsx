@@ -15,7 +15,7 @@ const PatientDashboard = () => {
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchNotifications, 30000);
+        const interval = setInterval(fetchNotifications, 5000);
         return () => clearInterval(interval);
     }, []);
 
@@ -161,13 +161,6 @@ const PatientDashboard = () => {
                     >
                         <i className="fas fa-home"></i>
                         <span>Dashboard</span>
-                    </button>
-                    <button 
-                        className={`nav-link ${activeTab === 'appointments' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('appointments')}
-                    >
-                        <i className="fas fa-calendar-alt"></i>
-                        <span>Appointments</span>
                     </button>
                     <button 
                         className={`nav-link ${activeTab === 'book' ? 'active' : ''}`}

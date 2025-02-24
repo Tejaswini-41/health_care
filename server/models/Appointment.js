@@ -38,7 +38,28 @@ const appointmentSchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         }
-    }]
+    }],
+    // New fields
+    age: {
+        type: Number,
+        required: false
+    },
+    bmi: {
+        type: Number,
+        required: false
+    },
+    heart_rate: {
+        type: [Number],
+        required: false
+    },
+    activity_levels: {
+        type: [[Number]],  // Array of arrays containing [steps, duration, calories]
+        required: false
+    },
+    medical_history: {
+        type: String,
+        required: false
+    }
 }, {
     timestamps: true
 });
