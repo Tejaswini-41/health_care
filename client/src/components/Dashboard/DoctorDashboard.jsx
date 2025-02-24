@@ -10,9 +10,9 @@ const DoctorDashboard = () => {
     const [error, setError] = useState('');
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const [showAIModal, setShowAIModal] = useState(false);
+    const [loadingInsights, setLoadingInsights] = useState({});
     const [aiInsights, setAIInsights] = useState(null);
-    const [loadingInsights, setLoadingInsights] = useState(false);
+    const [showAIModal, setShowAIModal] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -74,25 +74,50 @@ const DoctorDashboard = () => {
     };
 
     const handleGetAIInsights = async (appointment) => {
-        setLoadingInsights(true);
+        setLoadingInsights(prev => ({
+            ...prev,
+            [appointment._id]: true
+        }));
+
         try {
-            const data = {
-                age: appointment.age,
-                bmi: appointment.bmi,
-                heart_rate: appointment.heart_rate || [],
+            const healthData = {
+                age: appointment.age || 0,
+                bmi: appointment.bmi || 0,
+                heart_rate: appointment.heart_rate || [70], // Default if no data
                 activity_levels: appointment.activity_levels || [],
                 medical_history: appointment.medical_history || '',
-                medical_symptoms: appointment.symptoms
+                medical_symptoms: appointment.symptoms || '',
+                patient_id: appointment.patient._id // Add patient ID for tracking
             };
 
-            const response = await axios.post('http://localhost:8000/generate-summary', data);
-            setAIInsights(response.data);
+            const response = await axios.post(
+                'http://localhost:8000/generate-summary',
+                healthData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 30000 // 30 second timeout
+                }
+            );
+
+            setAIInsights({
+                text: response.data.text,
+                healthScore: response.data.health_score
+            });
             setShowAIModal(true);
         } catch (error) {
             console.error('Error fetching AI insights:', error);
-            setError('Failed to fetch AI insights');
+            setError(
+                error.code === 'ECONNREFUSED' 
+                    ? 'Cannot connect to AI service. Please ensure the server is running.'
+                    : 'Failed to get AI insights. Please try again.'
+            );
         } finally {
-            setLoadingInsights(false);
+            setLoadingInsights(prev => ({
+                ...prev,
+                [appointment._id]: false
+            }));
         }
     };
 
@@ -160,11 +185,21 @@ const DoctorDashboard = () => {
                                         View Health Data
                                     </button>
                                     <button 
-                                        className="ai-insights-btn"
+                                        className={`ai-insights-btn ${loadingInsights[appointment._id] ? 'loading' : ''}`}
                                         onClick={() => handleGetAIInsights(appointment)}
-                                        disabled={loadingInsights}
+                                        disabled={loadingInsights[appointment._id]}
                                     >
-                                        {loadingInsights ? 'Loading...' : 'AI Insights'}
+                                        {loadingInsights[appointment._id] ? (
+                                            <>
+                                                <i className="fas fa-spinner fa-spin"></i>
+                                                Analyzing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <i className="fas fa-robot"></i>
+                                                AI Insights
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -229,15 +264,24 @@ const DoctorDashboard = () => {
 
                 {showAIModal && aiInsights && (
                     <div className="modal">
-                        <div className="modal-content">
+                        <div className="modal-content ai-insights">
                             <div className="modal-header">
-                                <h3>AI Health Insights</h3>
+                                <h3>AI Health Analysis</h3>
+                                <div className="health-score">
+                                    Health Score: {aiInsights.healthScore}
+                                    <div className="score-indicator" 
+                                         style={{
+                                             '--score': `${aiInsights.healthScore}%`,
+                                             backgroundColor: `hsl(${aiInsights.healthScore * 1.2}, 70%, 45%)`
+                                         }}>
+                                    </div>
+                                </div>
                                 <button className="close-btn" onClick={() => setShowAIModal(false)}>×</button>
                             </div>
-                            <div className="modal-body ai-insights">
-                                <div className="ai-content">
-                                    {aiInsights.split('\n').map((line, index) => (
-                                        <p key={index}>{line}</p>
+                            <div className="modal-body">
+                                <div className="ai-report">
+                                    {aiInsights.text.split('\n').map((line, index) => (
+                                        <p key={index}>{line.trim() ? line : <br/>}</p>
                                     ))}
                                 </div>
                             </div>

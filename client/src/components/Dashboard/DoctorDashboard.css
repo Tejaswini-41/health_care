@@ -363,7 +363,7 @@
 }
 
 .ai-insights-btn {
-    background: #6b46c1;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -372,12 +372,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-weight: 500;
     transition: all 0.3s ease;
 }
 
 .ai-insights-btn:hover {
-    background: #553c9a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .ai-insights-btn:disabled {
@@ -406,4 +406,29 @@
 .modal-content.ai-insights {
     max-width: 800px;
     width: 90%;
+}
+
+.ai-report {
+    padding: 20px;
+    background: #f7fafc;
+    border-radius: 8px;
+    line-height: 1.6;
+}
+
+.ai-report p {
+    margin-bottom: 12px;
+    color: #2d3748;
+}
+
+.ai-report p:empty {
+    display: none;
+}
+
+/* Loading Animation */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.fa-spinner {
+    animation: spin 1s linear infinite;
 }
