@@ -161,3 +161,25 @@ export const getPatientNotifications = async (req, res) => {
         });
     }
 };
+
+export const getHealthData = async (req, res) => {
+    try {
+        const appointments = await Appointment.find({ patient: req.user._id })
+            .populate('doctor', 'name')
+            .select('date doctor age bmi heart_rate medical_history')
+            .sort({ date: -1 });
+
+        res.status(200).json({
+            success: true,
+            appointments
+        });
+    } catch (error) {
+        console.error('Error fetching health data:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching health data',
+            error: error.message
+        });
+    }
+};
+
