@@ -62,3 +62,51 @@ export const getDoctors = async (req, res) => {
         });
     }
 };
+
+export const getDoctorAppointments = async (req, res) => {
+    try {
+        const appointments = await Appointment.find({ doctor: req.userId })
+            .populate('patient', 'name email')
+            .sort({ date: 1 });
+
+        res.status(200).json({
+            success: true,
+            appointments
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching appointments',
+            error: error.message
+        });
+    }
+};
+
+export const updateAppointmentStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const appointment = await Appointment.findOneAndUpdate(
+            { _id: req.params.id, doctor: req.userId },
+            { status },
+            { new: true }
+        ).populate('patient', 'name email');
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: 'Appointment not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            appointment
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error updating appointment',
+            error: error.message
+        });
+    }
+};
