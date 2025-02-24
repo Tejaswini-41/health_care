@@ -3,7 +3,17 @@ import User from '../models/User.js';
 
 export const createAppointment = async (req, res) => {
     try {
-        const { doctorId, date, time, symptoms } = req.body;
+        const { 
+            doctorId, 
+            date, 
+            time, 
+            symptoms, 
+            age,
+            bmi,
+            heart_rate,
+            activity_levels,
+            medical_history 
+        } = req.body;
         const patientId = req.userId; // From auth middleware
 
         // Validate doctor exists
@@ -21,7 +31,12 @@ export const createAppointment = async (req, res) => {
             doctor: doctorId,
             date,
             time,
-            symptoms
+            symptoms,
+            age,
+            bmi,
+            heart_rate,
+            activity_levels,
+            medical_history
         });
 
         // Populate patient and doctor details
@@ -146,3 +161,25 @@ export const getPatientNotifications = async (req, res) => {
         });
     }
 };
+
+export const getHealthData = async (req, res) => {
+    try {
+        const appointments = await Appointment.find({ patient: req.user._id })
+            .populate('doctor', 'name')
+            .select('date doctor age bmi heart_rate medical_history')
+            .sort({ date: -1 });
+
+        res.status(200).json({
+            success: true,
+            appointments
+        });
+    } catch (error) {
+        console.error('Error fetching health data:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching health data',
+            error: error.message
+        });
+    }
+};
+

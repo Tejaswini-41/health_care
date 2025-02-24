@@ -5,7 +5,8 @@ import {
     getDoctors, 
     getDoctorAppointments, 
     updateAppointmentStatus,
-    getPatientNotifications 
+    getPatientNotifications,
+    getHealthData
 } from '../controllers/appointmentController.js';
 
 const router = express.Router();
@@ -15,5 +16,6 @@ router.get('/doctors', protect, getDoctors);
 router.get('/doctor-appointments', protect, getDoctorAppointments);
 router.put('/update-status/:id', protect, updateAppointmentStatus);
 router.get('/notifications', protect, getPatientNotifications);
+router.get('/health-data',  getHealthData);
 
 export default router;

@@ -4,6 +4,8 @@ import axios from "axios";
 import "./PatientDashboard.css";
 import BookAppointment from "../Appointment/BookAppointment";
 import SmartwatchConnect from "../Smartwatch/SmartwatchConnect.jsx";
+import SyncHealth from "./SyncHealth";
+
 const PatientDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [user, setUser] = useState(null);
@@ -15,7 +17,7 @@ const PatientDashboard = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchNotifications, 30000);
+    const interval = setInterval(fetchNotifications, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -221,7 +223,15 @@ const PatientDashboard = () => {
             <i className="fas fa-plus-circle"></i>
             <span>Book Appointment</span>
           </button>
+          <button
+            className={`nav-link ${activeTab === "sync" ? "active" : ""}`}
+            onClick={() => setActiveTab("sync")}
+          >
+            <i className="fas fa-sync"></i>
+            <span>Health Data</span>
+          </button>
         </nav>
+
 
         <div className="sidebar-footer">
           <button
