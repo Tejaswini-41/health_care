@@ -85,27 +85,63 @@ export const getDoctorAppointments = async (req, res) => {
 export const updateAppointmentStatus = async (req, res) => {
     try {
         const { status } = req.body;
-        const appointment = await Appointment.findOneAndUpdate(
-            { _id: req.params.id, doctor: req.userId },
-            { status },
-            { new: true }
-        ).populate('patient', 'name email');
+        const appointment = await Appointment.findById(req.params.id)
+            .populate('doctor', 'name specialization')
+            .populate('patient', 'name email');
 
         if (!appointment) {
-            return res.status(404).json({
-                success: false,
-                message: 'Appointment not found'
-            });
+            return res.status(404).json({ message: 'Appointment not found' });
         }
+
+        appointment.status = status;
+        
+        // Add notification based on status
+        const notification = {
+            message: status === 'Approved' 
+                ? `Dr. ${appointment.doctor.name} has approved your appointment scheduled for ${new Date(appointment.date).toLocaleDateString()} at ${appointment.time}. Please be on time.`
+                : `Dr. ${appointment.doctor.name} has rejected your appointment request for ${new Date(appointment.date).toLocaleDateString()}.`,
+            isRead: false
+        };
+
+        appointment.notifications.push(notification);
+        await appointment.save();
 
         res.json({
             success: true,
-            appointment
+            appointment,
+            notification
         });
     } catch (error) {
         res.status(500).json({
             success: false,
             message: 'Error updating appointment',
+            error: error.message
+        });
+    }
+};
+
+// Add new endpoint to get patient's notifications
+export const getPatientNotifications = async (req, res) => {
+    try {
+        const appointments = await Appointment.find({ 
+            patient: req.userId,
+            'notifications.isRead': false 
+        })
+        .populate('doctor', 'name specialization')
+        .sort({ 'notifications.createdAt': -1 });
+
+        const notifications = appointments.flatMap(apt => 
+            apt.notifications.filter(n => !n.isRead)
+        );
+
+        res.json({
+            success: true,
+            notifications
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching notifications',
             error: error.message
         });
     }

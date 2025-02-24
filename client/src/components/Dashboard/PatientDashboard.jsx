@@ -10,6 +10,8 @@ const PatientDashboard = () => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifications, setShowNotifications] = useState(false);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -39,6 +41,26 @@ const PatientDashboard = () => {
 
         fetchUserData();
     }, [navigate]);
+
+    useEffect(() => {
+        fetchNotifications();
+        // Poll for new notifications every 30 seconds
+        const interval = setInterval(fetchNotifications, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const fetchNotifications = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(
+                'http://localhost:5000/api/appointments/notifications',
+                { headers: { Authorization: `Bearer ${token}` }}
+            );
+            setNotifications(response.data.notifications);
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -87,6 +109,31 @@ const PatientDashboard = () => {
                             <p className="no-appointments">No appointments scheduled</p>
                         )}
                     </section>
+                </div>
+
+                <div className="sidebar">
+                    <div className="notification-icon" onClick={() => setShowNotifications(!showNotifications)}>
+                        <i className="fas fa-bell"></i>
+                        {notifications.length > 0 && (
+                            <span className="notification-badge">{notifications.length}</span>
+                        )}
+                    </div>
+                </div>
+
+                <div className="main-content">
+                    {showNotifications && notifications.length > 0 && (
+                        <div className="notifications-panel">
+                            <h3>Notifications</h3>
+                            {notifications.map((notification, index) => (
+                                <div key={index} className="notification-item">
+                                    <p>{notification.message}</p>
+                                    <span className="notification-time">
+                                        {new Date(notification.createdAt).toLocaleString()}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </Layout>

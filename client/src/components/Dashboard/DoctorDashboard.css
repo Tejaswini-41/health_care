@@ -68,6 +68,7 @@
     border-radius: 4px;
     cursor: pointer;
     font-weight: 500;
+    transition: opacity 0.3s;
 }
 
 .approve-btn {
@@ -78,6 +79,15 @@
 .reject-btn {
     background: #dc3545;
     color: white;
+}
+
+.approve-btn:hover, .reject-btn:hover {
+    opacity: 0.9;
+}
+
+.approve-btn:disabled, .reject-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .loading {
@@ -219,6 +229,18 @@
 .appointment-card.rejected .status-badge {
     background: #f8d7da;
     color: #721c24;
+}
+
+.status-section {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.status-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
 }
 
 @media (max-width: 768px) {

@@ -47,6 +47,21 @@ const DoctorDashboard = () => {
         navigate('/login');
     };
 
+    const handleStatusUpdate = async (appointmentId, newStatus) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(
+                `http://localhost:5000/api/appointments/update-status/${appointmentId}`,
+                { status: newStatus },
+                { headers: { Authorization: `Bearer ${token}` }}
+            );
+            // Refresh appointments after status update
+            fetchAppointments();
+        } catch (error) {
+            setError('Failed to update appointment status');
+        }
+    };
+
     if (loading) return <div className="loading">Loading...</div>;
 
     return (
@@ -81,7 +96,25 @@ const DoctorDashboard = () => {
                             <p><strong>Date:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
                             <p><strong>Time:</strong> {appointment.time}</p>
                             <p><strong>Symptoms:</strong> {appointment.symptoms}</p>
-                            <div className="status-badge">{appointment.status}</div>
+                            <div className="status-section">
+                                <p><strong>Current Status:</strong> {appointment.status}</p>
+                                {appointment.status === 'Pending' && (
+                                    <div className="status-actions">
+                                        <button 
+                                            className="approve-btn"
+                                            onClick={() => handleStatusUpdate(appointment._id, 'Approved')}
+                                        >
+                                            Approve
+                                        </button>
+                                        <button 
+                                            className="reject-btn"
+                                            onClick={() => handleStatusUpdate(appointment._id, 'Rejected')}
+                                        >
+                                            Reject
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>

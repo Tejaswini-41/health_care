@@ -27,7 +27,18 @@ const appointmentSchema = new mongoose.Schema({
         type: String,
         enum: ['Pending', 'Approved', 'Rejected'],
         default: 'Pending'
-    }
+    },
+    notifications: [{
+        message: String,
+        isRead: {
+            type: Boolean,
+            default: false
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 }, {
     timestamps: true
 });
