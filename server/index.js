@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import appointmentRoutes from './routes/appointmentRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import googleFitRoutes from './routes/googleFitRoutes.js';
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/users', userRoutes);
-
+app.use("/googlefit", googleFitRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -35,15 +36,7 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Error handling for port already in use
-const server = app.listen(PORT, () => {
+// Start server
+app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-}).on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-        console.log(`Port ${PORT} is busy, trying ${PORT + 1}`);
-        server.listen(PORT + 1);
-    } else {
-        console.error(err);
-    }
 });
-
