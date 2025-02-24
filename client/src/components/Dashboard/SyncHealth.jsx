@@ -3,30 +3,34 @@ import axios from 'axios';
 import './SyncHealth.css';
 
 const SyncHealth = () => {
-    const [healthData, setHealthData] = useState([]);
+    const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        fetchHealthData();
+        fetchAppointments();
     }, []);
 
-    const fetchHealthData = async () => {
+    const fetchAppointments = async () => {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(
-                'http://localhost:5000/api/appointments/health-data',
+                'http://localhost:5000/api/appointments/my-appointments',
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }
             );
 
             if (response.data.success) {
-                setHealthData(response.data.appointments);
+                // Sort appointments by date in descending order
+                const sortedAppointments = response.data.appointments.sort(
+                    (a, b) => new Date(b.date) - new Date(a.date)
+                );
+                setAppointments(sortedAppointments);
             }
             setLoading(false);
         } catch (error) {
-            setError('Error fetching health data');
+            setError('Error fetching appointment data');
             setLoading(false);
         }
     };
@@ -37,67 +41,86 @@ const SyncHealth = () => {
     return (
         <div className="sync-health-container">
             <div className="sync-header">
-                <h2>Health Data History</h2>
-                <button onClick={fetchHealthData} className="refresh-btn">
+                <h2>Health Records History</h2>
+                <button onClick={fetchAppointments} className="refresh-btn">
                     <i className="fas fa-sync-alt"></i> Refresh Data
                 </button>
             </div>
 
-            <div className="health-data-grid">
-                {healthData.length > 0 ? (
-                    healthData.map((appointment) => (
-                        <div key={appointment._id} className="health-card">
-                            <div className="health-card-header">
-                                <h3>Visit Date: {new Date(appointment.date).toLocaleDateString()}</h3>
-                                <span className="doctor-info">Dr. {appointment.doctor.name}</span>
+            <div className="appointments-timeline">
+                {appointments.length > 0 ? (
+                    appointments.map((appointment) => (
+                        <div key={appointment._id} className="health-record-card">
+                            <div className="record-header">
+                                <div className="header-main">
+                                    <h3>
+                                        <i className="fas fa-calendar-alt"></i>
+                                        {new Date(appointment.date).toLocaleDateString()}
+                                    </h3>
+                                    <span className="appointment-time">
+                                        <i className="fas fa-clock"></i>
+                                        {appointment.time}
+                                    </span>
+                                </div>
+                                <div className="doctor-info">
+                                    <i className="fas fa-user-md"></i>
+                                    Dr. {appointment.doctor.name} - {appointment.doctor.specialization}
+                                </div>
                             </div>
-                            <div className="health-metrics">
-                                <div className="metric-card">
+
+                            <div className="health-metrics-grid">
+                                <div className="metric-item">
                                     <i className="fas fa-user"></i>
-                                    <h4>Age</h4>
-                                    <p>{appointment.age || 'N/A'} years</p>
+                                    <span className="metric-label">Age</span>
+                                    <span className="metric-value">{appointment.age || 'N/A'}</span>
                                 </div>
-                                <div className="metric-card">
+                                <div className="metric-item">
                                     <i className="fas fa-weight"></i>
-                                    <h4>BMI</h4>
-                                    <p>{appointment.bmi?.toFixed(1) || 'N/A'}</p>
+                                    <span className="metric-label">BMI</span>
+                                    <span className="metric-value">
+                                        {appointment.bmi ? appointment.bmi.toFixed(1) : 'N/A'}
+                                    </span>
                                 </div>
-                                <div className="metric-card">
+                                <div className="metric-item">
                                     <i className="fas fa-heartbeat"></i>
-                                    <h4>Heart Rate</h4>
-                                    <p>{appointment.heart_rate?.[0] || 'N/A'} BPM</p>
+                                    <span className="metric-label">Heart Rate</span>
+                                    <span className="metric-value">
+                                        {appointment.heart_rate && appointment.heart_rate.length > 0
+                                            ? `${appointment.heart_rate[0]} BPM`
+                                            : 'N/A'}
+                                    </span>
                                 </div>
-                                {appointment.activity_levels?.length > 0 && (
-                                    <>
-                                        <div className="metric-card">
-                                            <i className="fas fa-walking"></i>
-                                            <h4>Steps</h4>
-                                            <p>{appointment.activity_levels[0][0] || 'N/A'}</p>
-                                        </div>
-                                        <div className="metric-card">
-                                            <i className="fas fa-clock"></i>
-                                            <h4>Duration</h4>
-                                            <p>{appointment.activity_levels[0][1] || 'N/A'} min</p>
-                                        </div>
-                                        <div className="metric-card">
-                                            <i className="fas fa-fire"></i>
-                                            <h4>Calories</h4>
-                                            <p>{appointment.activity_levels[0][2] || 'N/A'} kcal</p>
-                                        </div>
-                                    </>
-                                )}
                             </div>
+
                             {appointment.medical_history && (
                                 <div className="medical-history">
-                                    <h4>Medical History</h4>
+                                    <h4>
+                                        <i className="fas fa-notes-medical"></i>
+                                        Medical History
+                                    </h4>
                                     <p>{appointment.medical_history}</p>
                                 </div>
                             )}
+
+                            <div className="symptoms-section">
+                                <h4>
+                                    <i className="fas fa-clipboard-list"></i>
+                                    Symptoms
+                                </h4>
+                                <p>{appointment.symptoms}</p>
+                            </div>
+
+                            <div className="appointment-status">
+                                <span className={`status-badge ${appointment.status.toLowerCase()}`}>
+                                    {appointment.status}
+                                </span>
+                            </div>
                         </div>
                     ))
                 ) : (
                     <div className="no-data-message">
-                        <p>No health data available yet. Please book an appointment to record your health data.</p>
+                        <i className="fas fa-file-medical-alt"></i>
+                        <p>No health records available. Book an appointment to start tracking your health data.</p>
                     </div>
                 )}
             </div>

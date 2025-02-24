@@ -16,7 +16,7 @@ const PatientDashboard = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchNotifications, 5000);
+    const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -68,57 +68,10 @@ const PatientDashboard = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "appointments":
-        return (
-          <div className="appointments-container">
-            <div className="appointments-header">
-              <h3>My Appointments</h3>
-              <button
-                className="book-appointment-btn"
-                onClick={() => setActiveTab("book")}
-              >
-                <i className="fas fa-plus"></i> New Appointment
-              </button>
-            </div>
-            <div className="appointments-grid">
-              {appointments.map((apt) => (
-                <div
-                  key={apt._id}
-                  className={`appointment-card ${apt.status.toLowerCase()}`}
-                >
-                  <div className="card-header">
-                    <h4>Dr. {apt.doctor.name}</h4>
-                    <span
-                      className={`status-badge ${apt.status.toLowerCase()}`}
-                    >
-                      {apt.status}
-                    </span>
-                  </div>
-                  <div className="card-body">
-                    <p>
-                      <i className="fas fa-calendar"></i>{" "}
-                      {new Date(apt.date).toLocaleDateString()}
-                    </p>
-                    <p>
-                      <i className="fas fa-clock"></i> {apt.time}
-                    </p>
-                    <p>
-                      <i className="fas fa-user-md"></i>{" "}
-                      {apt.doctor.specialization}
-                    </p>
-                    <p className="symptoms">
-                      <i className="fas fa-notes-medical"></i> {apt.symptoms}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
       case "book":
-        return (
-          <BookAppointment onSuccess={() => setActiveTab("appointments")} />
-        );
+        return <BookAppointment onSuccess={() => setActiveTab("dashboard")} />;
+      case "sync":
+        return <SyncHealth />;
       default:
         return (
           <div className="dashboard-overview">
@@ -198,21 +151,20 @@ const PatientDashboard = () => {
             <span>Dashboard</span>
           </button>
           <button
+            className={`nav-link ${activeTab === "sync" ? "active" : ""}`}
+            onClick={() => setActiveTab("sync")}
+          >
+            <i className="fas fa-sync"></i>
+            <span>Health Records</span>
+          </button>
+          <button
             className={`nav-link ${activeTab === "book" ? "active" : ""}`}
             onClick={() => setActiveTab("book")}
           >
             <i className="fas fa-plus-circle"></i>
             <span>Book Appointment</span>
           </button>
-          <button
-            className={`nav-link ${activeTab === "sync" ? "active" : ""}`}
-            onClick={() => setActiveTab("sync")}
-          >
-            <i className="fas fa-sync"></i>
-            <span>Health Data</span>
-          </button>
         </nav>
-
 
         <div className="sidebar-footer">
           <button
