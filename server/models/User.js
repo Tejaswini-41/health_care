@@ -35,5 +35,21 @@ userSchema.pre('save', async function(next) {
     this.password = await bcrypt.hash(this.password, salt);
 });
 
+// Add method to compare password
+userSchema.methods.matchPassword = async function(enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Drop existing indexes and create new ones
 const User = mongoose.model('User', userSchema);
+const init = async () => {
+    try {
+        await User.collection.dropIndexes();
+        await User.collection.createIndex({ email: 1 }, { unique: true });
+    } catch (error) {
+        console.log('Index initialization error:', error);
+    }
+};
+init();
+
 export default User;
