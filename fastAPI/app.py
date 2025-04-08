@@ -239,3 +239,4 @@ def format_activity_data(activity_levels: List[List[float]]) -> str:
 @app.get("/")
 def health_check():
     return {"status": "API is running!"}
+

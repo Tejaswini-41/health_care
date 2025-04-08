@@ -186,7 +186,7 @@ const PatientDashboard = () => {
       <div className="sidebar">
         <div className="profile-section">
           <div className="profile-image">
-            <img src="https://via.placeholder.com/150" alt="Profile" />
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQx4WPMRwUZHH4CIYhmmhdmOPjBP03sSfRshQ&s" alt="Profile" />
           </div>
           <h3>{user?.name}</h3>
           <p className="email">{user?.email}</p>

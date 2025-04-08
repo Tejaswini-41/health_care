@@ -128,7 +128,7 @@ const DoctorDashboard = () => {
             <div className="sidebar">
                 <div className="profile-section">
                     <div className="profile-image">
-                        <img src="https://via.placeholder.com/150" alt="Doctor Profile" />
+                        <img src="https://t4.ftcdn.net/jpg/02/29/53/11/360_F_229531197_jmFcViuzXaYOQdoOK1qyg7uIGdnuKhpt.jpg" alt="Doctor Profile" />
                     </div>
                     <div className="profile-details">
                         <h3>Dr. {profile?.name}</h3>
