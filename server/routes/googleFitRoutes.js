@@ -1,7 +1,9 @@
 import express from 'express';
 import { google } from "googleapis";
 import dotenv from "dotenv";
-
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
+import { protect } from "../middleware/authMiddleware.js";
 dotenv.config();
 const router = express.Router();
 
@@ -16,6 +18,9 @@ let userTokens = {}; // Store user tokens in memory
 
 // Google OAuth Authentication Route
 router.get("/auth", (req, res) => {
+    const { token } = req.query;
+    if (!token) return res.status(401).send("Missing auth token");
+
     const authUrl = oauth2Client.generateAuthUrl({
         access_type: "offline",
         scope: [
@@ -25,32 +30,50 @@ router.get("/auth", (req, res) => {
             "https://www.googleapis.com/auth/fitness.sleep.read",
             "https://www.googleapis.com/auth/fitness.body.read"
         ],
+        state: token // We'll pass this to callback
     });
+
     res.redirect(authUrl);
 });
+
 
 // Handle Google Fit Callback
 router.get("/auth/callback", async (req, res) => {
     try {
-        const { code } = req.query;
+        const { code, state: token } = req.query;
+
+        if (!token) return res.status(400).send("Missing state token");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id;
+
         const { tokens } = await oauth2Client.getToken(code);
         oauth2Client.setCredentials(tokens);
-        userTokens = tokens;
 
-        // Redirect back to the frontend page after successful connection
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).send("User not found");
+
+        user.googleFitTokens = tokens;
+        await user.save();
+
         res.redirect("http://localhost:5173/patient-dashboard?smartwatch=connected");
     } catch (error) {
-        console.error("Error during authentication:", error);
-        res.status(500).send("Authentication Failed");
+        console.error("Error during Google Fit callback:", error);
+        res.status(500).send("Google Fit Authentication Failed");
     }
 });
 
-// Function to fetch fitness data
-const fetchGoogleFitData = async (dataTypeName) => {
-    try {
-        if (!userTokens.access_token) throw new Error("User not authenticated");
 
-        oauth2Client.setCredentials(userTokens);
+// Function to fetch fitness data
+const fetchGoogleFitData = async (dataTypeName, patientId) => {
+    try {
+        const user = await User.findById(patientId);
+
+        if (!user || !user.googleFitTokens || !user.googleFitTokens.access_token) {
+            throw new Error("Google Fit not connected for this patient.");
+        }
+
+        oauth2Client.setCredentials(user.googleFitTokens);
+
         const fitness = google.fitness({ version: "v1", auth: oauth2Client });
 
         const response = await fitness.users.dataset.aggregate({
@@ -69,25 +92,34 @@ const fetchGoogleFitData = async (dataTypeName) => {
         }));
     } catch (error) {
         console.error(`Error fetching ${dataTypeName}:`, error);
-        return { error: `Failed to fetch ${dataTypeName} data` };
+        return [];
     }
 };
 
 // Define API Endpoints for Health Data
-router.get("/steps", async (req, res) => res.json({ steps: await fetchGoogleFitData("com.google.step_count.delta") }));
-router.get("/heartRate", async (req, res) => res.json({ heartRate: await fetchGoogleFitData("com.google.heart_rate.bpm") }));
-
-router.get("/oxygen", async (req, res) => {
-    res.json({ oxygen: await fetchGoogleFitData("com.google.oxygen_saturation") });
+router.get("/steps/:patientId", protect, async (req, res) => {
+    const steps = await fetchGoogleFitData("com.google.step_count.delta", req.params.patientId);
+    res.json({ steps });
 });
 
-router.get("/sleep", async (req, res) => {
-    res.json({ sleep: await fetchGoogleFitData("com.google.sleep.segment") });
+router.get("/heartRate/:patientId", protect, async (req, res) => {
+    const heartRate = await fetchGoogleFitData("com.google.heart_rate.bpm", req.params.patientId);
+    res.json({ heartRate });
 });
 
-router.get("/body", async (req, res) => {
-    const weight = await fetchGoogleFitData("com.google.weight");
-    const height = await fetchGoogleFitData("com.google.height");
+router.get("/oxygen/:patientId", protect, async (req, res) => {
+    const oxygen = await fetchGoogleFitData("com.google.oxygen_saturation", req.params.patientId);
+    res.json({ oxygen });
+});
+
+router.get("/sleep/:patientId", protect, async (req, res) => {
+    const sleep = await fetchGoogleFitData("com.google.sleep.segment", req.params.patientId);
+    res.json({ sleep });
+});
+
+router.get("/body/:patientId", protect, async (req, res) => {
+    const weight = await fetchGoogleFitData("com.google.weight", req.params.patientId);
+    const height = await fetchGoogleFitData("com.google.height", req.params.patientId);
     res.json({ body: { weight, height } });
 });
 

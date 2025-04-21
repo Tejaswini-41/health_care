@@ -13,6 +13,9 @@ const DoctorDashboard = () => {
     const [loadingInsights, setLoadingInsights] = useState({});
     const [aiInsights, setAIInsights] = useState(null);
     const [showAIModal, setShowAIModal] = useState(false);
+    const [smartwatchData, setSmartwatchData] = useState(null);
+    const [showWatchModal, setShowWatchModal] = useState(false);
+    const [loadingWatch, setLoadingWatch] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -121,6 +124,60 @@ const DoctorDashboard = () => {
         }
     };
 
+    const dummyData = {
+        activity: [7000, 8000],
+        heartRate: [72, 75],
+        oxygen: [97, 98],
+        sleep: ['7 hrs', '6.5 hrs'],
+        body: { weight: [68], height: [170] }
+    };
+
+    const extractValidValues = (data, fallback, count = 2) => {
+        if (!data || !Array.isArray(data)) return fallback;
+        const filtered = data
+            .map((item) => (typeof item === 'object' ? item.value : item))
+            .filter((val) => val !== 'No Data' && val !== null && val !== undefined);
+        return filtered.length ? filtered.slice(-count) : fallback;
+    };
+
+    const handleViewSmartwatchData = async (patientId) => {
+        setLoadingWatch(true);
+        try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+
+            const [stepsRes, heartRes, oxygenRes, sleepRes, bodyRes] = await Promise.all([
+                axios.get(`http://localhost:5000/googlefit/steps/${patientId}`, config),
+                axios.get(`http://localhost:5000/googlefit/heartRate/${patientId}`, config),
+                axios.get(`http://localhost:5000/googlefit/oxygen/${patientId}`, config),
+                axios.get(`http://localhost:5000/googlefit/sleep/${patientId}`, config),
+                axios.get(`http://localhost:5000/googlefit/body/${patientId}`, config)
+            ]);
+
+            const activity = extractValidValues(stepsRes.data.steps, dummyData.activity);
+            const heartRate = extractValidValues(heartRes.data.heartRate, dummyData.heartRate);
+            const oxygen = extractValidValues(oxygenRes.data.oxygen, dummyData.oxygen);
+            const sleep = extractValidValues(sleepRes.data.sleep, dummyData.sleep);
+            const weight = extractValidValues(bodyRes.data.body.weight, dummyData.body.weight, 1);
+            const height = extractValidValues(bodyRes.data.body.height, dummyData.body.height, 1);
+
+            setSmartwatchData({
+                activity,
+                heartRate,
+                oxygen,
+                sleep,
+                body: { weight, height }
+            });
+
+            setShowWatchModal(true);
+        } catch (err) {
+            console.error('Smartwatch fetch failed', err);
+            alert('Smartwatch data unavailable for this patient.');
+        } finally {
+            setLoadingWatch(false);
+        }
+    };
+
     if (loading) return <div className="loading">Loading...</div>;
 
     return (
@@ -200,6 +257,12 @@ const DoctorDashboard = () => {
                                                 AI Insights
                                             </>
                                         )}
+                                    </button>
+                                    <button 
+                                        className="smartwatch-btn"
+                                        onClick={() => handleViewSmartwatchData(appointment.patient._id)}
+                                    >
+                                        {loadingWatch ? "Loading..." : "Smartwatch Data"}
                                     </button>
                                 </div>
                             </div>
@@ -288,9 +351,32 @@ const DoctorDashboard = () => {
                         </div>
                     </div>
                 )}
+                
+                {showWatchModal && smartwatchData && (
+                    <div className="modal">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h3>Smartwatch Data</h3>
+                                <button className="close-btn" onClick={() => setShowWatchModal(false)}>×</button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="health-metrics-grid">
+                                    <div className="metric-item"><h4>Steps</h4><p>{smartwatchData.activity.join(', ')} steps</p></div>
+                                    <div className="metric-item"><h4>Heart Rate</h4><p>{smartwatchData.heartRate.join(', ')} bpm</p></div>
+                                    <div className="metric-item"><h4>Oxygen</h4><p>{smartwatchData.oxygen.join(', ')}%</p></div>
+                                    <div className="metric-item"><h4>Sleep</h4><p>{smartwatchData.sleep.join(', ')}</p></div>
+                                    <div className="metric-item"><h4>Weight</h4><p>{smartwatchData.body.weight[0]} kg</p></div>
+                                    <div className="metric-item"><h4>Height</h4><p>{smartwatchData.body.height[0]} cm</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
 export default DoctorDashboard;
+
+

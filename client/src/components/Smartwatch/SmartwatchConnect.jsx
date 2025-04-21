@@ -33,8 +33,14 @@ const SmartwatchConnect = () => {
     }, []);
 
     const connectSmartwatch = () => {
-        window.location.href = "http://localhost:5000/googlefit/auth";
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please login again to connect your smartwatch.");
+            return;
+        }
+        window.location.href = `http://localhost:5000/googlefit/auth?token=${token}`;
     };
+    
 
     const extractValidValues = (data, fallback, count = 2) => {
         if (!data || !Array.isArray(data)) return fallback;
