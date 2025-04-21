@@ -19,6 +19,9 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 
+models = genai.list_models()
+for m in models:
+    print(m.name, m.supported_generation_methods)
 # Initialize FastAPI App
 app = FastAPI()
 
@@ -35,7 +38,7 @@ app.add_middleware(
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
+print(f"GEMINI_API_KEY: {api_key}")
 try:
     # Load XGBoost Activity Model
     with open("xgb_activity_model.pkl", "rb") as f:
@@ -179,7 +182,7 @@ async def generate_summary(data: SummaryInput):
             "Format the response in clear sections with bullet points where appropriate."
         )
 
-        model = genai.GenerativeModel("gemini-pro")
+        model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
         response = model.generate_content(prompt)
 
         if not response.text:

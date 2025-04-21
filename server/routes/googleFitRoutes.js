@@ -77,4 +77,18 @@ const fetchGoogleFitData = async (dataTypeName) => {
 router.get("/steps", async (req, res) => res.json({ steps: await fetchGoogleFitData("com.google.step_count.delta") }));
 router.get("/heartRate", async (req, res) => res.json({ heartRate: await fetchGoogleFitData("com.google.heart_rate.bpm") }));
 
+router.get("/oxygen", async (req, res) => {
+    res.json({ oxygen: await fetchGoogleFitData("com.google.oxygen_saturation") });
+});
+
+router.get("/sleep", async (req, res) => {
+    res.json({ sleep: await fetchGoogleFitData("com.google.sleep.segment") });
+});
+
+router.get("/body", async (req, res) => {
+    const weight = await fetchGoogleFitData("com.google.weight");
+    const height = await fetchGoogleFitData("com.google.height");
+    res.json({ body: { weight, height } });
+});
+
 export default router;
