@@ -15,7 +15,7 @@ const DoctorDashboard = () => {
     const [showAIModal, setShowAIModal] = useState(false);
     const [smartwatchData, setSmartwatchData] = useState(null);
     const [showWatchModal, setShowWatchModal] = useState(false);
-    const [loadingWatch, setLoadingWatch] = useState(false);
+    const [loadingWatch, setLoadingWatch] = useState({});
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -141,7 +141,12 @@ const DoctorDashboard = () => {
     };
 
     const handleViewSmartwatchData = async (patientId) => {
-        setLoadingWatch(true);
+        // Set loading state for specific patient
+        setLoadingWatch(prev => ({
+            ...prev,
+            [patientId]: true
+        }));
+        
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -174,7 +179,11 @@ const DoctorDashboard = () => {
             console.error('Smartwatch fetch failed', err);
             alert('Smartwatch data unavailable for this patient.');
         } finally {
-            setLoadingWatch(false);
+            // Clear loading state for specific patient
+            setLoadingWatch(prev => ({
+                ...prev,
+                [patientId]: false
+            }));
         }
     };
 
@@ -259,11 +268,11 @@ const DoctorDashboard = () => {
                                         )}
                                     </button>
                                     <button 
-                                        className="smartwatch-btn"
-                                        onClick={() => handleViewSmartwatchData(appointment.patient._id)}
-                                    >
-                                        {loadingWatch ? "Loading..." : "Smartwatch Data"}
-                                    </button>
+                                            className="smartwatch-btn"
+                                            onClick={() => handleViewSmartwatchData(appointment.patient._id)}
+                                        >
+                                            {loadingWatch[appointment.patient._id] ? "Loading..." : "Smartwatch Data"}
+                                        </button>   
                                 </div>
                             </div>
                         </div>
