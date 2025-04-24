@@ -273,6 +273,14 @@ const DoctorDashboard = () => {
                                         >
                                             {loadingWatch[appointment.patient._id] ? "Loading..." : "Smartwatch Data"}
                                         </button>   
+                                    {appointment.medicalReportUrl && (
+                                        <button
+                                            className="view-report-btn"
+                                            onClick={() => window.open(appointment.medicalReportUrl, "_blank")}
+                                        >
+                                            📄 View Medical Report
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -326,7 +334,11 @@ const DoctorDashboard = () => {
                                 {selectedAppointment.medical_history && (
                                     <div className="medical-history">
                                         <h4>Medical History</h4>
-                                        <p>{selectedAppointment.medical_history}</p>
+                                        <div className="medical-history-text">
+                                            {selectedAppointment.medical_history.split('\n').map((line, index) => (
+                                                <p key={index}>{line.trim() ? line : <br />}</p>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -375,7 +387,7 @@ const DoctorDashboard = () => {
                                     <div className="metric-item"><h4>Oxygen</h4><p>{smartwatchData.oxygen.join(', ')}%</p></div>
                                     <div className="metric-item"><h4>Sleep</h4><p>{smartwatchData.sleep.join(', ')}</p></div>
                                     <div className="metric-item"><h4>Weight</h4><p>{smartwatchData.body.weight[0]} kg</p></div>
-                                    <div className="metric-item"><h4>Height</h4><p>{smartwatchData.body.height[0]} cm</p></div>
+                                    <div className="metric-item"><h4>Height</h4><p>{smartwatchData.body.height[0]} m</p></div>
                                 </div>
                             </div>
                         </div>

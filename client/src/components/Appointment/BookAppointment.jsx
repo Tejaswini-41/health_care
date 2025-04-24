@@ -16,6 +16,7 @@ const BookAppointment = () => {
         activity_levels: [],
         medical_history: ''
     });
+    const [medicalReport, setMedicalReport] = useState(null);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
@@ -42,22 +43,37 @@ const BookAppointment = () => {
         setError('');
         setSuccess('');
         setLoading(true);
-
+    
         try {
             const token = localStorage.getItem('token');
+    
+            const formPayload = new FormData();
+            formPayload.append('doctorId', formData.doctorId);
+            formPayload.append('date', formData.date);
+            formPayload.append('time', formData.time);
+            formPayload.append('symptoms', formData.symptoms);
+            formPayload.append('age', formData.age);
+            formPayload.append('bmi', formData.bmi);
+            formPayload.append('heart_rate', formData.heart_rate);
+            formPayload.append('activity_levels', JSON.stringify(formData.activity_levels));
+            if (medicalReport) {
+                formPayload.append('medical_report', medicalReport);
+            }
+    
             const response = await axios.post(
                 'http://localhost:5000/api/appointments/create',
-                formData,
+                formPayload,
                 {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
                 }
             );
-
+    
             if (response.data.success) {
                 setSuccess('Appointment booked successfully!');
-                setTimeout(() => {
-                    navigate('/patient-dashboard');
-                }, 1000);
+                setTimeout(() => navigate('/patient-dashboard'), 1000);
             }
         } catch (error) {
             setError(error.response?.data?.message || 'Error booking appointment');
@@ -65,6 +81,7 @@ const BookAppointment = () => {
             setLoading(false);
         }
     };
+    
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -176,13 +193,13 @@ const BookAppointment = () => {
                                 />
                             </div>
                             <div className="grid-item full-width">
-                                <label>Medical History</label>
-                                <textarea
-                                    name="medical_history"
-                                    value={formData.medical_history}
-                                    onChange={handleInputChange}
-                                    placeholder="Any relevant medical history"
-                                    rows="4"
+                                <label>Upload Medical Report</label>
+                                <input
+                                    type="file"
+                                    name="medical_report"
+                                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                                    onChange={(e) => setMedicalReport(e.target.files[0])}
+                                    required
                                 />
                             </div>
                         </div>

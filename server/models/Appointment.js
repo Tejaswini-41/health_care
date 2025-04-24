@@ -59,7 +59,11 @@ const appointmentSchema = new mongoose.Schema({
     medical_history: {
         type: String,
         required: false
-    }
+    },
+    medicalReportUrl: {
+        type: String,
+        required: false
+      }       
 }, {
     timestamps: true
 });

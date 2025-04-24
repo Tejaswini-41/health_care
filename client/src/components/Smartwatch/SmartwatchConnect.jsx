@@ -75,7 +75,6 @@ const SmartwatchConnect = () => {
         } catch (err) {
             console.error("Failed to fetch health data:", err);
             setHealthData(dummyData);
-            setError("Unable to fetch health data. Showing fallback values.");
         }
     };
 
@@ -112,8 +111,6 @@ const SmartwatchConnect = () => {
                     </div>
                 </>
             )}
-
-            {error && <p className="error-message">{error}</p>}
         </div>
     );
 };

@@ -9,6 +9,16 @@ import google.generativeai as genai  # Google Generative AI SDK
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import fitz  # PyMuPDF
+from docx import Document
+from fastapi import UploadFile, File
+import pytesseract
+from pdf2image import convert_from_path
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+# Optional: If you're on Windows and installed tesseract separately
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 load_dotenv()  # Add this at the top with other imports
 
@@ -234,6 +244,69 @@ def format_activity_data(activity_levels: List[List[float]]) -> str:
     
     recent_activity = activity_levels[-1]
     return f"Steps: {recent_activity[0]:.0f}, Duration: {recent_activity[1]:.0f}min, Calories: {recent_activity[2]:.0f}"
+
+
+def extract_text_from_file(filepath: str) -> str:
+    ext = os.path.splitext(filepath)[1].lower()
+    
+    if ext == '.txt':
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return f.read()
+
+    elif ext == '.pdf':
+        try:
+            # images = convert_from_path(filepath)
+            POPPLER_PATH = r"C:\Program Files\poppler-24.08.0\Library\bin"
+            images = convert_from_path(filepath, poppler_path=POPPLER_PATH)
+            text = ""
+            for img in images:
+                text += pytesseract.image_to_string(img)
+            return text
+        except Exception as e:
+            raise ValueError(f"OCR failed for scanned PDF: {str(e)}")
+
+    elif ext in ['.doc', '.docx']:
+        doc = Document(filepath)
+        return "\n".join(p.text for p in doc.paragraphs)
+
+    else:
+        raise ValueError("Unsupported file format for text extraction")
+
+
+def clean_extracted_text(raw_text: str) -> str:
+    lines = raw_text.split('\n')
+    cleaned_lines = [line.strip() for line in lines if line.strip()]
+    return '\n'.join(cleaned_lines)
+
+
+# ========================== #
+# 🚀 Medical Report Extraction Endpoint #
+# ========================== #
+@app.post("/extract-medical-history")
+async def extract_medical_history(medical_report: UploadFile = File(...)):
+    try:
+        # Save temp file
+        temp_path = f"temp_reports/{medical_report.filename}"
+        os.makedirs("temp_reports", exist_ok=True)
+        with open(temp_path, "wb") as f:
+            f.write(await medical_report.read())
+
+        # Extract text
+        extracted_text = extract_text_from_file(temp_path)
+        
+        # Clean the extracted text
+        extracted_text = clean_extracted_text(extracted_text)
+
+        # Clean up
+        os.remove(temp_path)
+
+        return { "extracted_history": extracted_text }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to extract text: {str(e)}"
+        )
 
 
 # ========================== #

@@ -6,7 +6,9 @@ import authRoutes from './routes/authRoutes.js';
 import appointmentRoutes from './routes/appointmentRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import googleFitRoutes from './routes/googleFitRoutes.js';
-
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config();
 
 const app = express();
@@ -25,7 +27,7 @@ app.use('/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/users', userRoutes);
 app.use("/googlefit", googleFitRoutes);
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Error handling middleware
 app.use((err, req, res, next) => {
     const statusCode = res.statusCode === 200 ? 500 : res.statusCode;

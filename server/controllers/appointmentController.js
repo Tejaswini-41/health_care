@@ -1,64 +1,84 @@
 import Appointment from '../models/Appointment.js';
 import User from '../models/User.js';
+import axios from "axios";
+import fs from 'fs';
+import FormData from 'form-data';
 
 export const createAppointment = async (req, res) => {
     try {
-        const { 
-            doctorId, 
-            date, 
-            time, 
-            symptoms, 
-            age,
-            bmi,
-            heart_rate,
-            activity_levels,
-            medical_history 
-        } = req.body;
-        const patientId = req.userId; // From auth middleware
-
-        // Validate doctor exists
-        const doctor = await User.findOne({ _id: doctorId, role: 'Doctor' });
-        if (!doctor) {
-            return res.status(404).json({
-                success: false,
-                message: 'Doctor not found'
-            });
-        }
-
-        // Create appointment
-        const appointment = await Appointment.create({
-            patient: patientId,
-            doctor: doctorId,
-            date,
-            time,
-            symptoms,
-            age,
-            bmi,
-            heart_rate,
-            activity_levels,
-            medical_history
-        });
-
-        // Populate patient and doctor details
-        const populatedAppointment = await Appointment.findById(appointment._id)
-            .populate('patient', 'name email')
-            .populate('doctor', 'name email specialization');
-
-        res.status(201).json({
-            success: true,
-            message: 'Appointment booked successfully',
-            appointment: populatedAppointment
-        });
-
+      const {
+        doctorId,
+        date,
+        time,
+        symptoms,
+        age,
+        bmi,
+        heart_rate,
+        activity_levels
+      } = req.body;
+  
+      const patientId = req.userId;
+  
+      const doctor = await User.findOne({ _id: doctorId, role: 'Doctor' });
+      if (!doctor) {
+        return res.status(404).json({ success: false, message: 'Doctor not found' });
+      }
+  
+      // Prepare file URL (local)
+      const reportUrl = req.file ? `http://localhost:5000/uploads/${req.file.filename}` : null;
+      const localPath = req.file ? req.file.path : null;
+  
+      let extractedMedicalHistory = "";
+  
+      // ⬇️ Send file to FastAPI for OCR if it exists
+      if (localPath) {
+        const formData = new FormData();
+        formData.append('medical_report', fs.createReadStream(localPath));
+  
+        const fastApiRes = await axios.post(
+          "http://127.0.0.1:8000/extract-medical-history",
+          formData,
+          {
+            headers: {
+              ...formData.getHeaders()
+            }
+          }
+        );
+  
+        extractedMedicalHistory = fastApiRes.data.extracted_history || "";
+      }
+  
+      // Save appointment in DB
+      const appointment = await Appointment.create({
+        patient: patientId,
+        doctor: doctorId,
+        date,
+        time,
+        symptoms,
+        age,
+        bmi,
+        heart_rate,
+        activity_levels: JSON.parse(activity_levels || '[]'),
+        medicalReportUrl: reportUrl,
+        medical_history: extractedMedicalHistory // 👈 Save extracted history here
+      });
+  
+      const populatedAppointment = await Appointment.findById(appointment._id)
+        .populate('patient', 'name email')
+        .populate('doctor', 'name email specialization');
+  
+      res.status(201).json({
+        success: true,
+        message: 'Appointment booked successfully',
+        appointment: populatedAppointment
+      });
+  
     } catch (error) {
-        console.error('Appointment creation error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error booking appointment',
-            error: error.message
-        });
+      console.error('Appointment creation error:', error);
+      res.status(500).json({ success: false, message: 'Error booking appointment', error: error.message });
     }
-};
+  };
+  
 
 export const getDoctors = async (req, res) => {
     try {
